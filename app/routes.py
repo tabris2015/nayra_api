@@ -1,3 +1,7 @@
+import os
+import json
+from threading import Thread
+
 from datetime import datetime
 from flask import render_template, flash, redirect, url_for, request
 from flask import jsonify, abort, make_response
@@ -7,11 +11,13 @@ from werkzeug.utils import secure_filename
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, EditProfileForm
 from app.models import User, Audio, Program
+from app.fsm_parser import JsonFsm
 
-import os
 
-ALLOWED_EXTENSIONS = set(['wav', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+ALLOWED_EXTENSIONS = set(['wav'])#, 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
 
+
+fsm = JsonFsm()
 
 @app.before_request
 def before_request():
@@ -109,42 +115,40 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-@app.route('/upload', methods=['GET', 'POST'])
-def upload_file():
-    if request.method == 'POST':
-        # check
-        if 'file' not in request.files:
-            flash('No file part')
-            return redirect(request.url)
+@app.route('/api/audios', methods=['POST'])
+def create_audio():
+    # check
+    if 'file' not in request.files:
+        flash('No file part')
+        return jsonify({'result':'no file'}), 403
 
-        file = request.files['file']
+    file = request.files['file']
 
-        if file.filename == '':
-            flash('no selected file')
-            return redirect(request.url)
-        
-        if file and allowed_file(file.filename):
-            print(request.form['tipo'])
-            
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['AUDIOS_FOLDER'], filename)
-            file.save(filepath)
+    if file.filename == '':
+        flash('no selected file')
+        return jsonify({'result':'no filename'}), 403
 
-            audio = Audio(name=filename, content=request.form['content'], filepath=filepath)
-            db.session.add(audio)
-            db.session.commit()
+    audio_file = Audio.query.filter_by(name=file.filename).first()
 
-            return redirect(url_for('upload_file', filename=filename))
+    if audio_file:
+        return jsonify({'result':'filename already exists'}), 403
 
-    return '''
-    <!doctype html>
-    <title>Upload new File</title>
-    <h1>Upload new File</h1>
-    <form method=post enctype=multipart/form-data>
-      <input type=file name=file>
-      <input type=submit value=Upload>
-    </form>
-    '''
+    if file and allowed_file(file.filename):
+        print(request.form['tipo'])
+
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['AUDIOS_FOLDER'], filename)
+        file.save(filepath)
+
+        audio = Audio(
+                name=filename, content=request.form['content'], filepath=filepath)
+        db.session.add(audio)
+        db.session.commit()
+
+        return jsonify({'id': audio.id, 'name': audio.name, 'content': audio.content}), 201
+            # return redirect(url_for('upload_file', filename=filename))
+    else:
+        return jsonify({'result':'invalid extension'}), 403
 
 
 ### audio files
@@ -169,18 +173,57 @@ def get_audios():
 def get_audio(audio_id):
     print(audio_id)
     audio = Audio.query.filter_by(id=audio_id).first()
+    if not audio:
+        return jsonify({'result':'no file'}), 404
+        
     audio_dic = {'id':audio.id, 'name':audio.name, 'content':audio.content}
     return jsonify(audio_dic)
 
+
+##
+#update a audio
+@app.route('/api/audios/<int:audio_id>', methods=['PUT'])
+def update_audio(audio_id):
+    
+    if not request.json:
+        return jsonify({'result':'no json'}), 403
+    
+    if not request.json['content']:
+        return jsonify({'result':'no content'}), 403
+
+    audio = Audio.query.filter_by(id=audio_id).first()
+    if not audio:
+        return jsonify({'result':'no file'}), 404
+
+    audio.content = request.json['content']
+    db.session.commit()
+
+    return jsonify({'id': audio.id, 'name': audio.name, 'content': audio.content}), 200
+    
+
+@app.route('/api/audios/<int:audio_id>', methods=['DELETE'])
+def delete_audio(audio_id):
+    audio = Audio.query.filter_by(id=audio_id).first()
+
+    if not audio:
+        return jsonify({'result':'no file'}), 404
+    
+    if os.path.exists(audio.filepath):
+        os.remove(audio.filepath)
+
+    db.session.delete(audio)
+    db.session.commit()
+
+    return jsonify({'result': 'success'})
 
 # @app.route('/api/audios', methods=['POST'])
 # def create_audio():
 #     if not request.json or not title
 
 
+### program files
 
-
-### audio files
+# get all programs list
 @app.route('/api/programs', methods=['GET'])
 def get_programs():
     # fetch all programs and return a list
@@ -193,30 +236,187 @@ def get_programs():
                 'id':program.id, 
                 'name':program.name, 
                 'description':program.description,
+                'modified': program.modified.strftime("%d/%m/%Y")
             })
         # programs_dic[program.id] = program.filepath
 
     return jsonify(programs_list)
 
-
+# get a single complete program
 @app.route('/api/programs/<int:program_id>', methods=['GET'])
 def get_program(program_id):
     print(program_id)
     program = Program.query.filter_by(id=program_id).first()
+
+    if not program:
+        return jsonify({'result':'no file'}), 404    
+
+    filepath = program.filepath
     content = "nada por aqui" # TODO get content 
+    
+    with open(filepath) as json_file:
+        content = json.load(json_file)
+        
     program_dic = {
         'id':program.id, 
         'name':program.name, 
         'description':program.description,
+        'modified': program.modified.strftime("%d/%m/%Y"),
         'content': content
         }
     return jsonify(program_dic)
 
 
-
+# create a program
 @app.route('/api/programs', methods=['POST'])
 def create_program():
-    if not request.json or not 'id' in request.json:
+    if not request.json or not 'name' in request.json:
         abort(400)
+
+    programs = Program.query.all()
+
+    if not programs:
+        last_id = 1
+    else:
+        last_id = Program.query.order_by('-id').first().id
+
+    new_id = last_id + 1
     
-    program = 
+    content = request.json['content']
+
+    # print(content)
+
+    filename = str(new_id) + '.json'
+    filepath = os.path.join(app.config['PROGRAMS_FOLDER'], filename)
+    
+    #save json file
+    with open(filepath, 'w') as out:
+        json.dump(content, out)
+
+    program = Program(
+                id=new_id,
+                name=request.json['name'],
+                description=request.json['description'],
+                filepath=filepath
+                )
+    # save to db
+    db.session.add(program)
+    db.session.commit()   
+
+    program = Program.query.filter_by(id=new_id).first() 
+    program_dic = {
+        'id':program.id, 
+        'name':program.name, 
+        'description':program.description, 
+        'modified': program.modified.strftime("%d/%m/%Y")
+        }
+    return jsonify(program_dic), 201
+    
+
+#update a program
+@app.route('/api/programs/<int:program_id>', methods=['PUT'])
+def update_program(program_id):
+
+    if not request.json:
+        return jsonify({'result':'no json'}), 403
+    
+    if not request.json['content']:
+        return jsonify({'result':'no content'}), 403
+
+    program = Program.query.filter_by(id=program_id).first()
+    if not program:
+        return jsonify({'result':'no file'}), 404
+
+    if 'name' in request.json:
+        program.name = request.json['name']
+        print('new name: {}'.format(request.json['name']))
+
+    
+    if 'description' in request.json:
+        program.description = request.json['description']
+        print('new description: {}'.format(request.json['description']))
+
+
+    #save json file
+    if 'content' in request.json:
+        ## update file
+        filepath = program.filepath
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+        content = request.json['content']
+        with open(filepath, 'w') as out:
+            json.dump(content, out)
+        print('new program')
+
+    db.session.commit()
+
+    program_dic = {
+        'id':program.id, 
+        'name':program.name, 
+        'description':program.description, 
+        'modified': program.modified.strftime("%d/%m/%Y")
+        }
+    return jsonify(program_dic), 200
+    
+
+
+@app.route('/api/programs/<int:program_id>', methods=['DELETE'])
+def delete_program(program_id):
+    program = Program.query.filter_by(id=program_id).first()
+
+    if not program:
+        return jsonify({'result':'no file'}), 404
+    
+    if os.path.exists(program.filepath):
+        os.remove(program.filepath)
+
+    db.session.delete(program)
+    db.session.commit()
+
+    return jsonify({'result': 'success'})
+
+
+@app.route('/api/programs/<int:program_id>/run', methods=['GET'])
+def run_program(program_id):
+    global fsm
+    # global fsm
+    program = Program.query.filter_by(id=program_id).first()
+
+    if not program:
+        return jsonify({'result':'no file'}), 404    
+
+    print('corriendo {}'.format(program.name))
+    active_programs = Program.query.filter_by(active=True).first()
+
+    if active_programs:
+        active_id = active_programs.id
+        return jsonify({'result':'a program is already running', 'id':active_id}), 403
+    # fsm = 0
+
+    # db.session.commit()
+    fsm.loadFSM(program.filepath).begin()
+    # run_program_async(program.filepath)
+    # Thread(target=run_program_async, args=(program.filepath,)).start()
+    # program.active = True
+    return jsonify({'result': 'success'}), 200
+
+@app.route('/api/programs/stop', methods=['GET'])
+def stop_program():
+    # global fsm
+    print('deteniendo')
+    program = Program.query.filter_by(active=True).first()
+
+    if not program:
+        return jsonify({'result':'no program running'}), 404    
+    else:
+        program.active = False
+        db.session.commit()
+        
+        try:
+            # fsm.trigger('kill')
+            return jsonify({'result':'program stopped'}), 200
+        except:
+            return jsonify({'result':'not stopped'}), 404
+        else:
+            return jsonify({'result':'program stopped'}), 200

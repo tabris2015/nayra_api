@@ -50,8 +50,7 @@ class Audio(db.Model):
     name = db.Column(db.String(64), index=True, unique=True)
     content = db.Column(db.String(128), index=True)
     filepath = db.Column(db.String(120), index=True, unique=True)
-    created = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-
+    modified = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
     def __repr__(self):
         return '<Audio {}>'.format(self.name)
@@ -62,7 +61,9 @@ class Program(db.Model):
     name = db.Column(db.String(64), index=True, unique=True)
     description = db.Column(db.String(228), index=True)
     filepath = db.Column(db.String(120), index=True, unique=True)
-    created = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-
+    # created = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    modified = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    active = db.Column(db.Boolean, index=True, default=False)
+    
     def __repr__(self):
         return '<Program {}>'.format(self.name)

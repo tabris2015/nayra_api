@@ -17,5 +17,8 @@ class Config(object):
     # for file uploads
     UPLOAD_FOLDER = os.path.join(basedir, 'files')
     AUDIOS_FOLDER = os.path.join(UPLOAD_FOLDER, 'audios')
-    PROGRAM_FOLDER = os.path.join(UPLOAD_FOLDER, 'programs')
+    PROGRAMS_FOLDER = os.path.join(UPLOAD_FOLDER, 'programs')
+
+    # cors
+    CORS_HEADERS = 'Content-Type'
     

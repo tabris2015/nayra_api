@@ -114,3 +114,7 @@ logs/
 
 # db files 
 *.db
+
+.idea/
+
+*.wav

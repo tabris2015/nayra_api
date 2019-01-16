@@ -3,6 +3,8 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_cors import CORS, cross_origin
+
 from config import Config
 from logging.handlers import SMTPHandler
 from logging.handlers import RotatingFileHandler
@@ -12,10 +14,13 @@ import os
 app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
+cors = CORS(app, supports_credentials=True)
 migrate = Migrate(app, db)
 login = LoginManager(app)
 login.login_view = 'login'
 
+# cors
+# cors = CORS(app, resources)
 
 
 from app import routes, models, errors
