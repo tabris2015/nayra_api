@@ -1,0 +1,5 @@
+﻿#JSGF V1.0;
+
+grammar comandos;
+
+public <command> = saludos | hombre mujer | estado civil;

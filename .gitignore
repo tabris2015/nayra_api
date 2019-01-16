@@ -118,3 +118,5 @@ logs/
 .idea/
 
 *.wav
+
+venv/

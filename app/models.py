@@ -61,7 +61,6 @@ class Program(db.Model):
     name = db.Column(db.String(64), index=True, unique=True)
     description = db.Column(db.String(228), index=True)
     filepath = db.Column(db.String(120), index=True, unique=True)
-    # created = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     modified = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     active = db.Column(db.Boolean, index=True, default=False)
     

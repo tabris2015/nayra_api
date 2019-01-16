@@ -1,0 +1,9 @@
+﻿#JSGF V1.0;
+
+grammar comandos;
+
+public <command> = (<accion> [la | el] <cosa>| <accionled> luz | funcionar);
+
+<accionled> = (encender | apagar);
+<accion> = (abrir | cerrar);
+<cosa> = (puerta | ventana | cortina | garaje);
