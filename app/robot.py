@@ -1,11 +1,45 @@
 import os
 import pyaudio
 import wave
+import Adafruit_PCA9685
+import time
 
-from pocketsphinx import pocketsphinx
+import math
+
 from pocketsphinx import Decoder
 import speech_recognition as sr
 
+
+class ServoDriver(Adafruit_PCA9685):
+    def __init__(self, freq=50, min_us=544, max_us=2400):
+        super(ServoDriver, self).__init__()
+
+        self.FREQ = freq
+        self.MIN_US = min_us
+        self.MAX_US = max_us
+        super(ServoDriver, self).set_pwm_freq(self.FREQ)
+
+    def set_servo(self, channel, pos):
+        if pos < 0:
+            pos = 0
+        if pos > 180:
+            pos = 180
+
+        u_seconds = self.map(pos, 0, 180, self.MIN_US, self.MAX_US)
+        ticks = self.get_ticks(u_seconds)
+
+        super(ServoDriver, self).set_pwm(channel, 0, int(ticks))
+
+    @staticmethod
+    def map(value, in_min, in_max, out_min, out_max):
+        return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+    @staticmethod
+    def get_ticks(u_seconds):
+        us_per_tick = (1000000 / self.FREQ) / 4096
+        ticks = u_seconds / us_per_tick
+        ticks = math.ceil(ticks - 0.5)
+        return ticks
 
 class Voice(object):
     def play(self, filepath):
@@ -154,12 +188,52 @@ class TestVoice(Voice):
     def loadGrammar(self, grammar):
         # delete(self.decoder)
         grammar_file = grammar + '.gram'
-        c_string = os.path.join(self.GRAMMARDIR, grammar + '.gram').encode('ascii')
+        c_string = os.path.join(self.GRAMMARDIR, grammar_file).encode('ascii')
         print(c_string)
 
         self.config.set_string('-jsgf', c_string)
-        # print "-> cargando gramatica: " + grammar
+
         self.decoder.reinit(self.config)
 
     def close(self):
         self.audio.terminate()
+
+
+class CholitaTraction(Traction):
+
+    def __init__(self, left=1, right=2):
+        self.left_motor = left
+        self.right_motor = right
+        self.driver = ServoDriver()
+
+    def forward(self, duration):
+        print("forward")
+        self.driver.set_servo(self.left_motor, 180)
+        self.driver.set_servo(self.right_motor, 0)
+        time.sleep(duration)
+        self.driver.set_pwm(self.left_motor, 0, 0)
+        self.driver.set_pwm(self.right_motor, 0, 0)
+
+    def backward(self, duration):
+        print("backward")
+        self.driver.set_servo(self.left_motor, 0)
+        self.driver.set_servo(self.right_motor, 180)
+        time.sleep(duration)
+        self.driver.set_pwm(self.left_motor, 0, 0)
+        self.driver.set_pwm(self.right_motor, 0, 0)
+
+    def left(self, duration):
+        print("left")
+        self.driver.set_servo(self.left_motor, 180)
+        self.driver.set_servo(self.right_motor, 180)
+        time.sleep(duration)
+        self.driver.set_pwm(self.left_motor, 0, 0)
+        self.driver.set_pwm(self.right_motor, 0, 0)
+
+    def right(self, duration):
+        print("right")
+        self.driver.set_servo(self.left_motor, 0)
+        self.driver.set_servo(self.right_motor, 0)
+        time.sleep(duration)
+        self.driver.set_pwm(self.left_motor, 0, 0)
+        self.driver.set_pwm(self.right_motor, 0, 0)
