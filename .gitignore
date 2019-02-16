@@ -122,3 +122,7 @@ logs/
 venv/
 
 .ipynb_checkpoints/
+
+gram/auxiliar.gram
+
+pruebas_varias.ipynb
