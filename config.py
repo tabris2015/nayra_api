@@ -18,6 +18,8 @@ class Config(object):
     UPLOAD_FOLDER = os.path.join(basedir, 'files')
     AUDIOS_FOLDER = os.path.join(UPLOAD_FOLDER, 'audios')
     PROGRAMS_FOLDER = os.path.join(UPLOAD_FOLDER, 'programs')
+    GRAMMARS_FOLDER = os.path.join(basedir, 'gram')
+    GRAMMAR_TEMPLATE = "grammar.txt"
 
     # cors
     CORS_HEADERS = 'Content-Type'

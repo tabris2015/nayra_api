@@ -10,7 +10,7 @@ from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, EditProfileForm
-from app.models import User, Audio, Program
+from app.models import User, Audio, Program, Word, Action
 from app.fsm_parser import JsonFsm
 
 ALLOWED_EXTENSIONS = {'wav'}
@@ -133,14 +133,18 @@ def create_audio():
         return jsonify({'result': 'filename already exists'}), 403
 
     if file and allowed_file(file.filename):
-        print(request.form['tipo'])
+        print(request.form['category'])
 
         filename = secure_filename(file.filename)
         filepath = os.path.join(app.config['AUDIOS_FOLDER'], filename)
         file.save(filepath)
 
         audio = Audio(
-            name=filename, content=request.form['content'], filepath=filepath)
+            name=filename, 
+            content=request.form['content'], 
+            filepath=filepath, 
+            category=request.form['category'])
+            
         db.session.add(audio)
         db.session.commit()
 
@@ -162,7 +166,8 @@ def get_audios():
             {
                 'id': audio.id,
                 'name': audio.name,
-                'content': audio.content
+                'content': audio.content,
+                'category': audio.category
             })
         # audios_dic[audio.id] = audio.filepath
 
@@ -176,7 +181,10 @@ def get_audio(audio_id):
     if not audio:
         return jsonify({'result': 'no file'}), 404
 
-    audio_dic = {'id': audio.id, 'name': audio.name, 'content': audio.content}
+    audio_dic = {'id': audio.id, 
+                    'name': audio.name, 
+                    'content': audio.content,
+                    'category': audio.category}
     return jsonify(audio_dic)
 
 
@@ -235,7 +243,7 @@ def get_programs():
             })
         # programs_dic[program.id] = program.filepath
 
-    return jsonify(programs_list)
+    return jsonify(programs_list), 200
 
 
 # get a single complete program
@@ -411,5 +419,60 @@ def stop_program():
             return jsonify({'result': 'program stopped'}), 200
         except:
             return jsonify({'result': 'not stopped'}), 404
-        else:
-            return jsonify({'result': 'program stopped'}), 200
+
+@app.route('/api/words', methods=['GET'])
+def get_words():
+    words = Word.query.all()
+    words_list = [w.word for w in words]
+
+    return jsonify(words_list), 200
+
+@app.route('/api/words/<string:hint>', methods=['GET'])
+def get_candidates(hint):
+    candidates = Word.query.filter(Word.word.like(hint + '%'))
+
+    candidates_list = []
+
+    for candidate in candidates:
+        candidates_list.append(candidate.word)
+    #
+    # if not candidates:
+    #     return jsonify({'result': 'no file'}), 404
+    #
+    # audio_dic = {'id': audio.id, 'name': audio.name, 'content': audio.content}
+    return jsonify(candidates_list)
+
+
+# actions
+
+@app.route('/api/actions', methods=['GET'])
+def get_actions():
+    # fetch all audios and return a list
+    actions = Action.query.all()
+
+    actions_list = []
+
+    for action in actions:
+        actions_list.append(
+            {
+                'id': action.id,
+                'category': action.category,
+                'action': action.action
+            })
+        # audios_dic[audio.id] = audio.filepath
+
+    return jsonify(actions_list)
+
+
+@app.route('/api/actions/<int:action_id>', methods=['GET'])
+def get_action(action_id):
+    action = Action.query.filter_by(id=action_id).first()
+
+    if not action:
+        return jsonify({'result': 'no action'}), 404
+
+    action_dic = {'id': action.id,
+                    'category': action.category,
+                    'action': action.action
+                  }
+    return jsonify(action_dic)

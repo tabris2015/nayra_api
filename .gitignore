@@ -120,3 +120,5 @@ logs/
 *.wav
 
 venv/
+
+.ipynb_checkpoints/

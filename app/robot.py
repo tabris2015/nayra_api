@@ -1,7 +1,8 @@
 import os
 import pyaudio
 import wave
-import Adafruit_PCA9685
+from Adafruit_PCA9685 import PCA9685
+import pyttsx3
 import time
 
 import math
@@ -10,14 +11,14 @@ from pocketsphinx import Decoder
 import speech_recognition as sr
 
 
-class ServoDriver(Adafruit_PCA9685):
+class ServoDriver(PCA9685):
     def __init__(self, freq=50, min_us=544, max_us=2400):
-        super(ServoDriver, self).__init__()
+        super().__init__()
 
         self.FREQ = freq
         self.MIN_US = min_us
         self.MAX_US = max_us
-        super(ServoDriver, self).set_pwm_freq(self.FREQ)
+        super().set_pwm_freq(self.FREQ)
 
     def set_servo(self, channel, pos):
         if pos < 0:
@@ -47,6 +48,8 @@ class Voice(object):
 
     def recognize(self):
         raise NotImplementedError
+
+
 
 
 class RgbLed(object):
@@ -89,7 +92,7 @@ class Torso(object):
 class TestVoice(Voice):
     # playback
     FORMAT = pyaudio.paInt16
-    CHANNELS = 2
+    CHANNELS = 1
     RATE = 44100
     CHUNK = 1024
     FILE_NAME = 'aux.wav'
@@ -97,6 +100,10 @@ class TestVoice(Voice):
     # recognition
     MODELDIR = "es-ES"
     GRAMMARDIR = "gram"
+
+    # text to speech
+    RATE = 150
+    VOLUME = 0.9
 
     def __init__(self, file_name='aux.wav', raspi=False):
         self.FILE_NAME = file_name
@@ -109,6 +116,19 @@ class TestVoice(Voice):
         self.config.set_string('-logfn', os.devnull)
         self.decoder = Decoder(self.config)
         self.r = sr.Recognizer()
+        print("adjunting...")
+        with sr.Microphone() as source:
+            self.r.adjust_for_ambient_noise(source)
+
+        # tts
+        self.tts = pyttsx3.init()
+        self.tts.setProperty('rate', self.RATE)
+        self.tts.setProperty('volume', self.VOLUME)
+        self.tts.setProperty('voice', 'spanish-latin-am')
+
+    def speak(self, phrase):
+        self.tts.say(phrase)
+        self.tts.runAndWait()
 
     def play(self, filename):
 
@@ -139,7 +159,7 @@ class TestVoice(Voice):
             stream = self.audio.open(format=self.FORMAT,
                                      channels=self.CHANNELS,
                                      rate=self.RATE,
-                                     # input_device_index = input_index,
+                                     input_device_index = 7,
                                      input=True,
                                      frames_per_buffer=self.CHUNK)
 
@@ -174,10 +194,14 @@ class TestVoice(Voice):
         self.play(self.FILE_NAME)
 
     def recognize(self):
+        with sr.Microphone() as source:
+            audio = self.r.listen(source)
 
+
+        # raw_out = self.listen()
         try:
             self.decoder.start_utt()
-            self.decoder.process_raw(self.listen(), False, True)
+            self.decoder.process_raw(audio.frame_data, False, True)
             self.decoder.end_utt()
             hyp = self.decoder.hyp()
             return hyp.hypstr
@@ -188,7 +212,7 @@ class TestVoice(Voice):
     def loadGrammar(self, grammar):
         # delete(self.decoder)
         grammar_file = grammar + '.gram'
-        c_string = os.path.join(self.GRAMMARDIR, grammar_file).encode('ascii')
+        c_string = os.path.join(self.GRAMMARDIR, grammar_file)#.encode('ascii')
         print(c_string)
 
         self.config.set_string('-jsgf', c_string)

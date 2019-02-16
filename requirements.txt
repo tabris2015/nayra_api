@@ -19,3 +19,5 @@ SQLAlchemy==1.2.15
 transitions==0.6.9
 Werkzeug==0.14.1
 WTForms==2.2.1
+adafruit-pca9685
+pyttsx3

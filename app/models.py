@@ -51,6 +51,7 @@ class Audio(db.Model):
     content = db.Column(db.String(128), index=True)
     filepath = db.Column(db.String(120), index=True, unique=True)
     modified = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    category = db.Column(db.String(64), index=True, default="audio")
 
     def __repr__(self):
         return '<Audio {}>'.format(self.name)
@@ -66,3 +67,32 @@ class Program(db.Model):
     
     def __repr__(self):
         return '<Program {}>'.format(self.name)
+
+
+# modelo para las palabras
+class Word(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    word = db.Column(db.String(32), index=True, unique=True)
+
+    def __repr__(self):
+        return '<Word {}>'.format(self.word)
+
+
+# modelo para comandos pasados
+class VoiceCommand(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    command = db.Column(db.String(256), index=True, unique=True)
+    modified = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+
+    def __repr__(self):
+        return '<Voice Command {}>'.format(self.command)
+
+
+# para las acciones
+class Action(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    category = db.Column(db.String(64), index=True, default="")
+    action = db.Column(db.String(64), index=True, default="")
+
+    def __repr__(self):
+        return '<Action {}>'.format(self.action)
