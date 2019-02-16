@@ -2,6 +2,7 @@ from app import app, db
 from app.models import Word, Action
 
 
+
 actions_list = [
     ['traction', 'adelante'],
     ['led', 'blink'],
@@ -9,6 +10,11 @@ actions_list = [
     ['greet', 'hola'],
     ['greet', 'adios']
 ]
+
+# clean
+Word.query.delete()
+Action.query.delete()
+
 
 with open("es-ES/pronounciation-dictionary.dict", "r") as f:
     content = f.read().split("\n")
