@@ -6,7 +6,10 @@ from app.models import Word, Action
 actions_list = [
     ['traction', 'adelante'],
     ['led', 'blink'],
-    ['traction', ' atras'],
+    ['traction', 'atras'],
+    ['traction', 'izquierda'],
+    ['traction', 'derecha'],
+
     ['greet', 'hola'],
     ['greet', 'adios']
 ]
@@ -35,3 +38,4 @@ for action in actions_list:
 
 db.session.commit()
 print("insertadas {} palabras".format(i))
+print("insertadas {} acciones".format(len(actions_list)))

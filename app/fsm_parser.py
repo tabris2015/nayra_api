@@ -1,11 +1,11 @@
 import os
 import json
-from app.robot import TestVoice
+from app.robot import TestVoice, CholitaTraction
 
 from transitions import Machine
 
 from app import app, db
-from app.models import User, Audio, Program
+from app.models import User, Audio, Program, Action
 
 
 class Robot(Machine):
@@ -22,8 +22,12 @@ class Robot(Machine):
         self.tts_data = data_dic['tts_data']
         self.grammar_data = data_dic['grammar_data']
         self.trigger_data = data_dic['trigger_data']
+        self.action_data = data_dic['action_data']
 
         self.player = TestVoice()
+        # available only when deployed in a raspberry pi
+        if app.config['RASPI']:
+            self.traction = CholitaTraction()
 
         # init fsm part
         Machine.__init__(self,
@@ -32,50 +36,52 @@ class Robot(Machine):
                          initial='init',
                          ignore_invalid_triggers=True)
 
+    def doThings(self):
+        if self.state in self.audio_data:
+            filename = Audio.query.filter_by(id=self.audio_data[self.state]).first().filepath
+            self.player.play(filename)
+
+        if self.state in self.tts_data:
+            phrase = self.tts_data[self.state]
+            self.player.speak(phrase)
+
+        if self.state in self.action_data:
+            action = Action.query.filter_by(id=self.action_data[self.state]).first()
+            if app.config['RASPI']:
+
+                category = action.category
+                thingToDo = action.action
+
+                if category == 'traction':
+                    self.traction.move(thingToDo)
+            else:
+                print(action)
+
     def speak(self):
         # if self.state in self.
         if self.state in self.tts_data.keys():
             phrase = self.tts_data[self.state]
-            print('pronunciando {}'.format(phrase))
             self.player.speak(phrase)
+
+
         self.trigger('end')
         
     def audio(self):
-        if self.state in self.audio_data.keys():
-            filename = Audio.query.filter_by(id=self.audio_data[self.state]).first().filepath
-            print('reproduciendo {}'.format(filename))
-            self.player.play(filename)
-
-        if self.state in self.tts_data.keys():
-            phrase = self.tts_data[self.state]
-            print('pronunciando {}'.format(phrase))
-            self.player.speak(phrase)
+        self.doThings()
 
         self.trigger('end')
 
+
+
     def presentation(self):
         print('iniciando!')
-        if self.state in self.audio_data.keys():
-            filename = Audio.query.filter_by(id=self.audio_data[self.state]).first().filepath
-            self.player.play(filename)
-
-        if self.state in self.tts_data.keys():
-            phrase = self.tts_data[self.state]
-            print('pronunciando {}'.format(phrase))
-            self.player.speak(phrase)
+        self.doThings()
 
         self.trigger('end')
 
     def terminate(self):
-        if self.state in self.audio_data.keys():
-            filename = Audio.query.filter_by(id=self.audio_data[self.state]).first().filepath
-            self.player.play(filename)
+        self.doThings()
 
-        if self.state in self.tts_data.keys():
-            phrase = self.tts_data[self.state]
-            print('pronunciando {}'.format(phrase))
-            self.player.speak(phrase)
-            
         print('finalizando!')
 
     def recognition(self):
@@ -124,7 +130,14 @@ class JsonFsm(object):
 
     def __init__(self):
         # self.trigger('begin')
-        pass
+        self.audio_data = {}
+        self.tts_data = {}
+        self.recognition_data = {}
+        self.grammar_data = {}
+        self.trigger_data = {}
+        self.states = []
+        self.transitions = []
+        self.action_data = {}
 
     def loadFSM(self, filepath):
         print('reiniciando fsm')
@@ -146,35 +159,26 @@ class JsonFsm(object):
         initial = ''
         final = ''
 
-        audio_data = {}
-        tts_data = {}
-        recognition_data = {}
-        grammar_data = {}
-        trigger_data = {}
-        states = []
-        transitions = []
+        self.audio_data = {}
+        self.tts_data = {}
+        self.recognition_data = {}
+        self.grammar_data = {}
+        self.trigger_data = {}
+        self.states = []
+        self.transitions = []
+        self.action_data = {}
+
         # states
         for state in st_names:
             callback = self.json_data[state[1:]]['name'].lower()
 
             if 'presentation' in callback:
                 initial = state
-                c_audio = self.json_data[state[1:]]['data']
-                print(c_audio)
-                if c_audio['key'] == 'audio' and 'audio' in c_audio:
-                    print('hay audio')
-                    audio_data[state] = c_audio['audio']
-                if c_audio['key'] == 'text' and 'text' in c_audio:
-                    print("hay texto")
-                    tts_data[state] = c_audio['text']
+                self.checkData(state)
 
             if 'terminate' in callback:
                 final = state
-                c_audio = self.json_data[state[1:]]['data']
-                if c_audio['key'] == 'audio' and 'audio' in c_audio:
-                    audio_data[state] = c_audio['audio']
-                if c_audio['key'] == 'text' and 'text' in c_audio:
-                    tts_data[state] = c_audio['text']
+                self.checkData(state)
 
             # for recognition we must check the type
             if 'recognition' in callback:
@@ -188,44 +192,38 @@ class JsonFsm(object):
                         rec_comm.append(comm)
 
                     # generate and save grammar commands
-                    grammar_data[state] = " | ".join(rec_comm)
-                    trigger_data[state] = {value: key for key, value in self.json_data[state[1:]]['data'].items()}
+                    self.grammar_data[state] = " | ".join(rec_comm)
+                    self.trigger_data[state] = {value: key for key, value in self.json_data[state[1:]]['data'].items()}
 
-                    recognition_data[state] = {'grammar': "generic", 'commands': rec_comm}
+                    self.recognition_data[state] = {'grammar': "generic", 'commands': rec_comm}
                 else:
 
                     rec_comm = self.json_data[state[1:]]['outputs'].keys()
-                    recognition_data[state] = {'grammar': callback[13:], 'commands': rec_comm}
+                    self.recognition_data[state] = {'grammar': callback[13:], 'commands': rec_comm}
 
                 callback = 'recognition'
 
             if 'audio' in callback:
-                c_audio = self.json_data[state[1:]]['data']
-                if c_audio['key'] == 'audio' and 'audio' in c_audio:
-                    audio_data[state] = c_audio['audio']
-                if c_audio['key'] == 'text' and 'text' in c_audio:
-                    tts_data[state] = c_audio['text']
+                self.checkData(state)
 
             if 'speak' in callback:
                 c_audio = self.json_data[state[1:]]['data']
                 if c_audio:
-                    tts_data[state] = self.json_data[state[1:]]['data']['text']
+                    self.tts_data[state] = self.json_data[state[1:]]['data']['text']
 
-
-
-            states.append({'name': state, 'on_enter': callback})
+            self.states.append({'name': state, 'on_enter': callback})
 
         # dummy initial state
-        states.append({'name': 'init'})
+        self.states.append({'name': 'init'})
         # dummy final state
-        states.append({'name': 'oblivion'})
+        self.states.append({'name': 'oblivion'})
 
         # transitions
         rec_states = []
         for node, data in self.json_data.items():
             for name, out in data['outputs'].items():
                 if len(out["connections"]) > 0:
-                    transitions.append(
+                    self.transitions.append(
                         {
                             'trigger': name,
                             'dest': 's' + str(out["connections"][0]['node']),
@@ -234,7 +232,7 @@ class JsonFsm(object):
                     )
                 else:
                     # endpoints
-                    transitions.append(
+                    self.transitions.append(
                         {
                             'trigger': name,
                             'dest': final,
@@ -247,7 +245,7 @@ class JsonFsm(object):
 
         # add self transitionto recognize states
         if rec_states:
-            transitions.append(
+            self.transitions.append(
                 {
                     'trigger': 'retry',
                     'dest': '=',
@@ -255,7 +253,7 @@ class JsonFsm(object):
                 }
             )
         # add kill transition
-        transitions.append(
+        self.transitions.append(
             {
                 'trigger': 'kill',
                 'dest': 'oblivion',
@@ -264,7 +262,7 @@ class JsonFsm(object):
         )
 
         # dummy initial transition
-        transitions.append(
+        self.transitions.append(
             {
                 'trigger': 'begin',
                 'dest': initial,
@@ -273,13 +271,23 @@ class JsonFsm(object):
         )
 
         data_dic = {
-            'states': states,
-            'transitions': transitions,
-            'audio_data': audio_data,
-            'recognition_data': recognition_data,
-            'tts_data': tts_data,
-            'grammar_data': grammar_data,
-            'trigger_data': trigger_data
+            'states': self.states,
+            'transitions': self.transitions,
+            'audio_data': self.audio_data,
+            'recognition_data': self.recognition_data,
+            'tts_data': self.tts_data,
+            'grammar_data': self.grammar_data,
+            'trigger_data': self.trigger_data,
+            'action_data': self.action_data
         }
 
         return data_dic
+
+    def checkData(self, state):
+        c_audio = self.json_data[state[1:]]['data']
+        if c_audio['key'] == 'audio' and 'audio' in c_audio:
+            self.audio_data[state] = c_audio['audio']
+        if c_audio['key'] == 'text' and 'text' in c_audio:
+            self.tts_data[state] = c_audio['text']
+        if 'action' in c_audio:
+            self.action_data[state] = c_audio['action']

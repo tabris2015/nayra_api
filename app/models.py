@@ -95,4 +95,4 @@ class Action(db.Model):
     action = db.Column(db.String(64), index=True, default="")
 
     def __repr__(self):
-        return '<Action {}>'.format(self.action)
+        return '<Action {},{}>'.format(self.category, self.action)

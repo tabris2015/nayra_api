@@ -21,6 +21,8 @@ class Config(object):
     GRAMMARS_FOLDER = os.path.join(basedir, 'gram')
     GRAMMAR_TEMPLATE = "grammar.txt"
 
+    # for raspi deploy
+    RASPI = False
     # cors
     CORS_HEADERS = 'Content-Type'
     

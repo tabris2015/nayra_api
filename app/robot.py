@@ -230,6 +230,16 @@ class CholitaTraction(Traction):
         self.right_motor = right
         self.driver = ServoDriver()
 
+        self.move_dic = {
+            'adelante': self.forward,
+            'atras': self.backward,
+            'izquierda': self.left,
+            'derecha': self.right,
+        }
+
+    def move(self, command):
+        self.move_dic[command]()
+
     def forward(self, duration):
         print("forward")
         self.driver.set_servo(self.left_motor, 180)
