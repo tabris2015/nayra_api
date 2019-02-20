@@ -11,11 +11,12 @@ from werkzeug.utils import secure_filename
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, EditProfileForm
 from app.models import User, Audio, Program, Word, Action
-from app.fsm_parser import JsonFsm
+from app.fsm_parser import JsonFsm, Robot
 
 ALLOWED_EXTENSIONS = {'wav'}
 
 fsm = JsonFsm()
+running_instance = Robot({})
 
 
 @app.before_request
@@ -380,6 +381,7 @@ def delete_program(program_id):
 @app.route('/api/programs/<int:program_id>/run', methods=['GET'])
 def run_program(program_id):
     global fsm
+    global running_instance
     # global fsm
     program = Program.query.filter_by(id=program_id).first()
 
@@ -387,6 +389,7 @@ def run_program(program_id):
         return jsonify({'result': 'no file'}), 404
 
     print('corriendo {}'.format(program.name))
+
     active_programs = Program.query.filter_by(active=True).first()
 
     if active_programs:
@@ -395,7 +398,11 @@ def run_program(program_id):
     # fsm = 0
 
     # db.session.commit()
-    fsm.loadFSM(program.filepath).begin()
+    program.active = True;
+    db.session.commit()
+    running_instance = fsm.loadFSM(program.filepath)
+    running_instance.begin()
+
     # run_program_async(program.filepath)
     # Thread(target=run_program_async, args=(program.filepath,)).start()
     # program.active = True
@@ -405,6 +412,7 @@ def run_program(program_id):
 @app.route('/api/programs/stop', methods=['GET'])
 def stop_program():
     # global fsm
+    global running_instance
     print('deteniendo')
     program = Program.query.filter_by(active=True).first()
 
@@ -415,7 +423,7 @@ def stop_program():
         db.session.commit()
 
         try:
-            # fsm.trigger('kill')
+            running_instance.trigger('kill')
             return jsonify({'result': 'program stopped'}), 200
         except:
             return jsonify({'result': 'not stopped'}), 404

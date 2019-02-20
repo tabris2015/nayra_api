@@ -13,28 +13,35 @@ class Robot(Machine):
     transitions = []
     audio_data = {}
     recognition_data = {}
+    tts_data = {}
+    grammar_data = {}
+    trigger_data = {}
+    action_data = {}
 
     def __init__(self, data_dic):
-        self.states = data_dic['states']
-        self.transitions = data_dic['transitions']
-        self.audio_data = data_dic['audio_data']
-        self.recognition_data = data_dic['recognition_data']
-        self.tts_data = data_dic['tts_data']
-        self.grammar_data = data_dic['grammar_data']
-        self.trigger_data = data_dic['trigger_data']
-        self.action_data = data_dic['action_data']
+        if data_dic:
+            self.states = data_dic['states']
+            self.transitions = data_dic['transitions']
+            self.audio_data = data_dic['audio_data']
+            self.recognition_data = data_dic['recognition_data']
+            self.tts_data = data_dic['tts_data']
+            self.grammar_data = data_dic['grammar_data']
+            self.trigger_data = data_dic['trigger_data']
+            self.action_data = data_dic['action_data']
 
-        self.player = TestVoice()
-        # available only when deployed in a raspberry pi
-        if app.config['RASPI']:
-            self.traction = CholitaTraction()
+            self.player = TestVoice()
+            # available only when deployed in a raspberry pi
+            if app.config['RASPI']:
+                self.traction = CholitaTraction()
 
         # init fsm part
-        Machine.__init__(self,
-                         states=self.states,
-                         transitions=self.transitions,
-                         initial='init',
-                         ignore_invalid_triggers=True)
+            Machine.__init__(self,
+                            states=self.states,
+                            transitions=self.transitions,
+                            initial='init',
+                            ignore_invalid_triggers=True)
+        else:
+            pass
 
     def doThings(self):
         if self.state in self.audio_data:
