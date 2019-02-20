@@ -351,14 +351,15 @@ def update_program(program_id):
             json.dump(content, out)
         print('new program')
 
-    db.session.commit()
-
+    program.modified = datetime.now()
     program_dic = {
         'id': program.id,
         'name': program.name,
         'description': program.description,
         'modified': program.modified.strftime("%d/%m/%Y")
     }
+
+    db.session.commit()
     return jsonify(program_dic), 200
 
 
