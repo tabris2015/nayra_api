@@ -149,7 +149,13 @@ def create_audio():
         db.session.add(audio)
         db.session.commit()
 
-        return jsonify({'id': audio.id, 'name': audio.name, 'content': audio.content}), 201
+        audio_dic = {
+            'id': audio.id,
+            'name': audio.name,
+            'content': audio.content,
+            'category': audio.category
+        }
+        return jsonify(audio_dic), 201
 
     else:
         return jsonify({'result': 'invalid extension'}), 403
