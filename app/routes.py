@@ -202,14 +202,16 @@ def update_audio(audio_id):
     if not request.json:
         return jsonify({'result': 'no json'}), 403
 
-    if not request.json['content']:
-        return jsonify({'result': 'no content'}), 403
+    if not request.json['content'] or not request.json['category']:
+        return jsonify({'result': 'no new data'}), 403
 
     audio = Audio.query.filter_by(id=audio_id).first()
     if not audio:
         return jsonify({'result': 'no file'}), 404
 
-    audio.content = request.json['content']
+    audio.content = request.json['content'] if request.json['content'] else audio.content
+    audio.category = request.json['category'] if request.json['category'] else audio.category
+
     db.session.commit()
 
     return jsonify({'id': audio.id, 'name': audio.name, 'content': audio.content}), 200
