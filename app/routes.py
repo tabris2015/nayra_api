@@ -391,11 +391,12 @@ def delete_program(program_id):
 def run_program(program_id):
     global fsm
     global running_instance
-    # global fsm
+
     program = Program.query.filter_by(id=program_id).first()
 
     if not program:
         return jsonify({'result': 'no file'}), 404
+
 
     print('corriendo {}'.format(program.name))
 
@@ -403,10 +404,16 @@ def run_program(program_id):
 
     if active_programs:
         active_id = active_programs.id
-        return jsonify({'result': 'a program is already running', 'id': active_id}), 403
+
+        if running_instance.isRunning():
+            return jsonify({'result': 'a program is already running', 'id': active_id}), 403
+        else:
+            old_program = Program.query.filter_by(id=program_id).first()
+            old_program.active = False
     # fsm = 0
 
     # db.session.commit()
+
     program.active = True;
     db.session.commit()
     running_instance = fsm.loadFSM(program.filepath)

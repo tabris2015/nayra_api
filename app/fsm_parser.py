@@ -43,6 +43,9 @@ class Robot(Machine):
         else:
             pass
 
+    def isRunning(self):
+        return not self.is_oblivion()
+
     def doThings(self):
         if self.state in self.audio_data:
             filename = Audio.query.filter_by(id=self.audio_data[self.state]).first().filepath
