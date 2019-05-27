@@ -13,7 +13,7 @@ from app.forms import LoginForm, RegistrationForm, EditProfileForm
 from app.models import User, Audio, Program, Word, Action
 from app.fsm_parser import JsonFsm, Robot
 
-ALLOWED_EXTENSIONS = {'wav'}
+ALLOWED_EXTENSIONS = {'wav', 'mp3'}
 
 fsm = JsonFsm()
 running_instance = Robot({})

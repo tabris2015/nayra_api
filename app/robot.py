@@ -1,5 +1,6 @@
 import os
 import pyaudio
+from playsound import playsound
 import wave
 from Adafruit_PCA9685 import PCA9685
 import pyttsx3
@@ -131,20 +132,23 @@ class TestVoice(Voice):
         self.tts.runAndWait()
 
     def play(self, filename):
-
-        wf = wave.open(filename, 'rb')
-        stream = self.audio.open(format=self.audio.get_format_from_width(wf.getsampwidth()),
-                                 channels=wf.getnchannels(),
-                                 rate=wf.getframerate(),
-                                 output=True)
-        data = wf.readframes(self.CHUNK)
-
-        # play
-        while len(data) > 0:
-            stream.write(data)
+        extension = filename.split('.')[1]
+        if extension == 'wav':
+            wf = wave.open(filename, 'rb')
+            stream = self.audio.open(format=self.audio.get_format_from_width(wf.getsampwidth()),
+                                    channels=wf.getnchannels(),
+                                    rate=wf.getframerate(),
+                                    output=True)
             data = wf.readframes(self.CHUNK)
-        stream.stop_stream()
-        stream.close()
+
+            # play
+            while len(data) > 0:
+                stream.write(data)
+                data = wf.readframes(self.CHUNK)
+            stream.stop_stream()
+            stream.close()
+        elif extension == 'mp3':
+            playsound(filename)
 
     def listen(self, duration=3):
         # start recording
