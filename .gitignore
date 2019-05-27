@@ -126,3 +126,6 @@ venv/
 gram/auxiliar.gram
 
 pruebas_varias.ipynb
+
+
+.vscode
