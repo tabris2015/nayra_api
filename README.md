@@ -18,6 +18,11 @@ pyaudio requirement
 sudo apt-get install portaudio19-dev
 ```
 
+pyttsx requirement
+```bash
+sudo apt install espeak
+```
+
 ## Environment
 ```bash
 python3 -m venv .venv
@@ -30,6 +35,13 @@ pip install -r requirements
 ```bash
 flask db upgrade
 python3 nayra_setup.py
+```
+
+## Uplod folders
+```bash
+mkdir files
+mkdir files/programs
+mkdir files/audios
 ```
 
 # Updating requirements
