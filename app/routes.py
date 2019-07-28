@@ -413,16 +413,24 @@ def run_program(program_id):
     # fsm = 0
 
     # db.session.commit()
+    return_data = {"success": False}
+    code = 500
+    try:
+        program.active = True
+        db.session.commit()
+        running_instance = fsm.loadFSM(program.filepath)
+        running_instance.begin()
+        program.active = False
+        db.session.commit()
+        return_data["success"] = True
+        code = 200
+    except Exception as exc:
+        return_data["error"] = str(exc)
+        app.logger.error(exc)
+        program.active = False
+        db.session.commit()
 
-    program.active = True;
-    db.session.commit()
-    running_instance = fsm.loadFSM(program.filepath)
-    running_instance.begin()
-
-    # run_program_async(program.filepath)
-    # Thread(target=run_program_async, args=(program.filepath,)).start()
-    # program.active = True
-    return jsonify({'result': 'success'}), 200
+    return jsonify(return_data), code
 
 
 @app.route('/api/programs/stop', methods=['GET'])
