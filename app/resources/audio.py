@@ -27,7 +27,7 @@ def audio_type(file: FileStorage):
     else:
         audio_file = Audio.query.filter_by(name=file.filename).first();
         if audio_file:
-            raise ValueError("audio file already exists with id {}".format(id=audio_file.id))
+            raise ValueError("audio file already exists with id {id}".format(id=audio_file.id))
         else:
             return file
 
@@ -84,7 +84,6 @@ class AudioListRes(Resource):
         if not args["file"]:
             abort(400, message={"file": "audio file required"})
         file = args["file"]
-        print(file)
         name = secure_filename(file.filename)
         filepath = os.path.join(app.config['AUDIOS_FOLDER'], name)
         file.save(filepath)
