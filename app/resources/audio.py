@@ -81,15 +81,15 @@ class AudioListRes(Resource):
     @marshal_with(audio_fields)
     def post(self):
         args = audio_parser.parse_args()
+        category = AudioCategory.query.filter_by(id=args["category_id"]).first()
+        if not category:
+            abort(400, message={"category_id": "audio category not found"})
         if not args["file"]:
             abort(400, message={"file": "audio file required"})
         file = args["file"]
         name = secure_filename(file.filename)
         filepath = os.path.join(app.config['AUDIOS_FOLDER'], name)
         file.save(filepath)
-        category = AudioCategory.query.filter_by(id=args["category_id"]).first()
-        if not category:
-            abort(400, message={"category_id": "audio category not found"})
         audio = Audio(
             name=name,
             filepath=filepath,
