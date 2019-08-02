@@ -57,6 +57,16 @@ class Audio(db.Model):
         return '<Audio {}>'.format(self.name)
 
 
+# modelo para los audios
+class AudioCategory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), index=True, unique=True)
+    modified = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+
+    def __repr__(self):
+        return '<AudioCategory {}>'.format(self.name)
+
+
 class Program(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=True, unique=True)

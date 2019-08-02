@@ -10,7 +10,7 @@ from werkzeug.urls import url_parse
 from werkzeug.utils import secure_filename
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, EditProfileForm
-from app.models import User, Audio, Program, Word, Action
+from app.models import User, Audio, Program, Word, Action, AudioCategory
 from app.fsm_parser import JsonFsm, Robot
 
 ALLOWED_EXTENSIONS = {'wav', 'mp3'}
@@ -141,11 +141,11 @@ def create_audio():
         file.save(filepath)
 
         audio = Audio(
-            name=filename, 
-            content=request.form['content'], 
-            filepath=filepath, 
+            name=filename,
+            content=request.form['content'],
+            filepath=filepath,
             category=request.form['category'])
-            
+
         db.session.add(audio)
         db.session.commit()
 
@@ -169,13 +169,12 @@ def get_audios():
 
     audios_list = []
     for audio in audios:
-        audios_list.append(
-            {
-                'id': audio.id,
-                'name': audio.name,
-                'content': audio.content,
-                'category': audio.category
-            })
+        audios_list.append({
+            'id': audio.id,
+            'name': audio.name,
+            'content': audio.content,
+            'category': audio.category
+        })
         # audios_dic[audio.id] = audio.filepath
 
     return jsonify(audios_list)
@@ -188,10 +187,12 @@ def get_audio(audio_id):
     if not audio:
         return jsonify({'result': 'no file'}), 404
 
-    audio_dic = {'id': audio.id, 
-                    'name': audio.name, 
-                    'content': audio.content,
-                    'category': audio.category}
+    audio_dic = {
+        'id': audio.id,
+        'name': audio.name,
+        'content': audio.content,
+        'category': audio.category
+    }
     return jsonify(audio_dic)
 
 
@@ -233,7 +234,7 @@ def delete_audio(audio_id):
     return jsonify({'result': 'success'})
 
 
-### program files
+# program files
 
 # get all programs list
 @app.route('/api/programs', methods=['GET'])
@@ -243,13 +244,12 @@ def get_programs():
 
     programs_list = []
     for program in programs:
-        programs_list.append(
-            {
-                'id': program.id,
-                'name': program.name,
-                'description': program.description,
-                'modified': program.modified.strftime("%d/%m/%Y")
-            })
+        programs_list.append({
+            'id': program.id,
+            'name': program.name,
+            'description': program.description,
+            'modified': program.modified.strftime("%d/%m/%Y")
+        })
         # programs_dic[program.id] = program.filepath
 
     return jsonify(programs_list), 200
@@ -397,7 +397,6 @@ def run_program(program_id):
     if not program:
         return jsonify({'result': 'no file'}), 404
 
-
     print('corriendo {}'.format(program.name))
 
     active_programs = Program.query.filter_by(active=True).first()
@@ -452,12 +451,14 @@ def stop_program():
         except:
             return jsonify({'result': 'not stopped'}), 404
 
+
 @app.route('/api/words', methods=['GET'])
 def get_words():
     words = Word.query.all()
     words_list = [w.word for w in words]
 
     return jsonify(words_list), 200
+
 
 @app.route('/api/words/<string:hint>', methods=['GET'])
 def get_candidates(hint):
@@ -485,12 +486,11 @@ def get_actions():
     actions_list = []
 
     for action in actions:
-        actions_list.append(
-            {
-                'id': action.id,
-                'category': action.category,
-                'action': action.action
-            })
+        actions_list.append({
+            'id': action.id,
+            'category': action.category,
+            'action': action.action
+        })
         # audios_dic[audio.id] = audio.filepath
 
     return jsonify(actions_list)
@@ -503,8 +503,9 @@ def get_action(action_id):
     if not action:
         return jsonify({'result': 'no action'}), 404
 
-    action_dic = {'id': action.id,
-                    'category': action.category,
-                    'action': action.action
-                  }
+    action_dic = {
+        'id': action.id,
+        'category': action.category,
+        'action': action.action
+    }
     return jsonify(action_dic)
