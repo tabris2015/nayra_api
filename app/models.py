@@ -51,7 +51,9 @@ class Audio(db.Model):
     content = db.Column(db.String(128), index=True)
     filepath = db.Column(db.String(120), index=True, unique=True)
     modified = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    category = db.Column(db.String(64), index=True, default="audio")
+    category_id = db.Column(db.Integer, db.ForeignKey("audio_category.id"))
+
+    category = db.relationship("AudioCategory", foreign_keys=[category_id])
 
     def __repr__(self):
         return '<Audio {}>'.format(self.name)

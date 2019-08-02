@@ -1,8 +1,9 @@
 import datetime
-from app import app, db
-from flask_restful import Resource, fields, marshal_with, reqparse, abort
-from app.models import AudioCategory
 
+from flask_restful import Resource, abort, fields, marshal_with, reqparse
+
+from app import app, db
+from app.models import AudioCategory
 
 audio_category_fields = {
     "id": fields.Integer,
@@ -40,7 +41,7 @@ class AudioCategoryRes(Resource):
         self.check_audio_category(audio_category)
         db.session.delete(audio_category)
         db.session.commit()
-        return '', 204
+        return "", 204
 
 
 class AudioCategoryListRes(Resource):
