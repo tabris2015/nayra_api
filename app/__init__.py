@@ -28,12 +28,15 @@ api = Api(app, "/api")
 from app import routes, models, errors
 from app.resources.audio_category import AudioCategoryRes, AudioCategoryListRes
 from app.resources.audio import AudioRes, AudioListRes
+from app.resources.program import ProgramRes, ProgramListRes
 
 
 api.add_resource(AudioCategoryRes, "/audios/categories/<int:ac_id>")
 api.add_resource(AudioCategoryListRes, "/audios/categories")
 api.add_resource(AudioRes, "/audios/<int:audio_id>")
 api.add_resource(AudioListRes, "/audios")
+api.add_resource(ProgramRes, "/programs/<int:program_id>")
+api.add_resource(ProgramListRes, "/programs")
 
 
 if not app.debug:
