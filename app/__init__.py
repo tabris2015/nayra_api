@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_cors import CORS, cross_origin
+from flask_restful import Api
 
 from config import Config
 from logging.handlers import SMTPHandler
@@ -18,12 +19,24 @@ cors = CORS(app, supports_credentials=True)
 migrate = Migrate(app, db)
 login = LoginManager(app)
 login.login_view = 'login'
+api = Api(app, "/api")
 
 # cors
 # cors = CORS(app, resources)
 
 
 from app import routes, models, errors
+from app.resources.audio_category import AudioCategoryRes, AudioCategoryListRes
+from app.resources.audio import AudioRes, AudioListRes
+from app.resources.program import ProgramRes, ProgramListRes
+
+
+api.add_resource(AudioCategoryRes, "/audios/categories/<int:ac_id>")
+api.add_resource(AudioCategoryListRes, "/audios/categories")
+api.add_resource(AudioRes, "/audios/<int:audio_id>")
+api.add_resource(AudioListRes, "/audios")
+api.add_resource(ProgramRes, "/programs/<int:program_id>")
+api.add_resource(ProgramListRes, "/programs")
 
 
 if not app.debug:
