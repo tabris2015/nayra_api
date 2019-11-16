@@ -21,6 +21,7 @@ sudo apt-get install portaudio19-dev
 pyttsx requirement
 ```bash
 sudo apt install espeak
+sudo apt install libgirepository1.0-dev
 ```
 
 ## Environment

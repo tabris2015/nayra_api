@@ -11,6 +11,9 @@ import math
 from pocketsphinx import Decoder
 import speech_recognition as sr
 
+from google.cloud import texttospeech
+from playsound import playsound
+
 
 class ServoDriver(PCA9685):
     def __init__(self, freq=50, min_us=544, max_us=2400):
@@ -122,14 +125,37 @@ class TestVoice(Voice):
             self.r.adjust_for_ambient_noise(source)
 
         # tts
-        self.tts = pyttsx3.init()
-        self.tts.setProperty('rate', self.RATE)
-        self.tts.setProperty('volume', self.VOLUME)
-        self.tts.setProperty('voice', 'spanish-latin-am')
+        # self.tts = pyttsx3.init()
+        # self.tts.setProperty('rate', self.RATE)
+        # self.tts.setProperty('volume', self.VOLUME)
+        # self.tts.setProperty('voice', 'spanish-latin-am')
+        # Instantiates a client
+        self.tts_client = texttospeech.TextToSpeechClient()
+        # Build the voice request, select the language code ("en-US") and the ssml
+        # voice gender ("neutral")
+        self.tts_voice = texttospeech.types.VoiceSelectionParams(
+            language_code='es-ES',
+            ssml_gender=texttospeech.enums.SsmlVoiceGender.FEMALE)
+
+        # Select the type of audio file you want returned
+        self.tts_audio_config = texttospeech.types.AudioConfig(
+            audio_encoding=texttospeech.enums.AudioEncoding.MP3)
+        
 
     def speak(self, phrase):
-        self.tts.say(phrase)
-        self.tts.runAndWait()
+        # self.tts.say(phrase)
+        # self.tts.runAndWait()
+        # Set the text input to be synthesized
+        synthesis_input = texttospeech.types.SynthesisInput(text=phrase)
+        # Perform the text-to-speech request on the text input with the selected
+        # voice parameters and audio file type
+        response = self.tts_client.synthesize_speech(synthesis_input, self.tts_voice, self.tts_audio_config)
+        audio_file='tts.mp3'
+        # The response's audio_content is binary.
+        with open(audio_file, 'wb') as out:
+            out.write(response.audio_content)
+        playsound(audio_file)
+
 
     def play(self, filename):
         extension = filename.split('.')[1]
