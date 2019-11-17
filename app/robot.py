@@ -164,7 +164,7 @@ class TestVoice(Voice):
 
     def play(self, filename):
         print('reproduciendo archivo: ' + filename)
-        extension = filename.split('.')[1]
+        extension = filename.split('.')[-1]
         if extension == 'wav':
             wf = wave.open(filename, 'rb')
             stream = self.audio.open(format=self.audio.get_format_from_width(wf.getsampwidth()),
