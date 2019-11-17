@@ -77,3 +77,4 @@ Werkzeug==0.14.1
 widgetsnbextension==3.5.0
 wrapt==1.11.2
 WTForms==2.2.1
+google-cloud-texttospeech
