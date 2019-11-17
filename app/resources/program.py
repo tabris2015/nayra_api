@@ -67,7 +67,7 @@ class ProgramRes(Resource):
 class ProgramListRes(Resource):
     @marshal_with(program_fields)
     def get(self):
-        programs = Program.query.all()
+        programs = Program.query.all().order_by(desc(Program.id))
         return programs, 200
 
     @marshal_with(program_fields)

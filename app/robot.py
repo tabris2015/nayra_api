@@ -179,7 +179,9 @@ class TestVoice(Voice):
             stream.stop_stream()
             stream.close()
         elif extension == 'mp3':
-            playsound(filename)
+            command = '/usr/bin/mpg321 ' + filename
+            print(command)
+            os.system(command)
 
     def listen(self, duration=3):
         # start recording
