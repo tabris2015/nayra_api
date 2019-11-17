@@ -163,6 +163,7 @@ class TestVoice(Voice):
             os.system(command)
 
     def play(self, filename):
+        print('reproduciendo archivo: ' + filename)
         extension = filename.split('.')[1]
         if extension == 'wav':
             wf = wave.open(filename, 'rb')
