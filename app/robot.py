@@ -142,6 +142,7 @@ class TestVoice(Voice):
         # self.tts.say(phrase)
         # self.tts.runAndWait()
         # Set the text input to be synthesized
+        print('decir: ' + phrase)
         synthesis_input = texttospeech.types.SynthesisInput(text=phrase)
         # Perform the text-to-speech request on the text input with the selected
         # voice parameters and audio file type
@@ -150,7 +151,11 @@ class TestVoice(Voice):
         # The response's audio_content is binary.
         with open(audio_file, 'wb') as out:
             out.write(response.audio_content)
-        playsound(audio_file)
+        print('reproducir voz sintetica')
+        if self.raspi:
+            os.system('mpg321 foo.mp3')
+        else:
+            playsound(audio_file)
 
 
     def play(self, filename):
