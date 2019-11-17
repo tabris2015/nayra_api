@@ -14,7 +14,6 @@ import speech_recognition as sr
 from google.cloud import texttospeech
 from playsound import playsound
 
-
 class ServoDriver(PCA9685):
     def __init__(self, freq=50, min_us=544, max_us=2400):
         super().__init__()
@@ -53,9 +52,6 @@ class Voice(object):
     def recognize(self):
         raise NotImplementedError
 
-
-
-
 class RgbLed(object):
     r = 0.0
     g = 0.0
@@ -66,7 +62,6 @@ class RgbLed(object):
 
     def blink(self, times, interval):
         raise NotImplementedError
-
 
 class Traction(object):
     def forward(self, duration):
@@ -81,7 +76,6 @@ class Traction(object):
     def right(self, duration):
         raise NotImplementedError
 
-
 class Torso(object):
     def greeting(self, times, duration):
         raise NotImplementedError
@@ -91,7 +85,6 @@ class Torso(object):
 
     def yep(self, times, duration):
         raise NotImplementedError
-
 
 class TestVoice(Voice):
     # playback
@@ -110,6 +103,9 @@ class TestVoice(Voice):
     VOLUME = 0.9
 
     def __init__(self, file_name='aux.wav', raspi=False):
+
+        ## load environment
+
         self.FILE_NAME = file_name
         self.audio = pyaudio.PyAudio()
         self.raspi = raspi
@@ -251,7 +247,6 @@ class TestVoice(Voice):
 
     def close(self):
         self.audio.terminate()
-
 
 class CholitaTraction(Traction):
 

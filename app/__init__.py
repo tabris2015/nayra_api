@@ -11,6 +11,11 @@ from logging.handlers import SMTPHandler
 from logging.handlers import RotatingFileHandler
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv(verbose=True)
+
+print(os.getenv('GOOGLE_APPLICATION_CREDENTIALS'))
 
 app = Flask(__name__)
 app.config.from_object(Config)
