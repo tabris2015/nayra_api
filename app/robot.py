@@ -152,13 +152,9 @@ class TestVoice(Voice):
         with open(audio_file, 'wb') as out:
             out.write(response.audio_content)
         print('reproducir voz sintetica')
-        if self.raspi:
-            command = 'mpg321 ' + audio_file
-            print(command)
-            os.system(command)
-        else:
-            playsound(audio_file)
-
+        print(command)
+        command = 'mpg321 ' + audio_file
+        os.system(command)
 
     def play(self, filename):
         extension = filename.split('.')[1]
