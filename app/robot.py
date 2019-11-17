@@ -102,13 +102,15 @@ class TestVoice(Voice):
     RATE = 150
     VOLUME = 0.9
 
-    def __init__(self, file_name='aux.wav', raspi=False):
+    def __init__(self, file_name='aux.wav', raspi=False, local=True):
 
         ## load environment
 
         self.FILE_NAME = file_name
         self.audio = pyaudio.PyAudio()
         self.raspi = raspi
+
+        self.local = local
 
         self.config = Decoder.default_config()
         self.config.set_string('-hmm', os.path.join(self.MODELDIR, 'acoustic-model'))
@@ -121,40 +123,44 @@ class TestVoice(Voice):
             self.r.adjust_for_ambient_noise(source)
 
         # tts
-        # self.tts = pyttsx3.init()
-        # self.tts.setProperty('rate', self.RATE)
-        # self.tts.setProperty('volume', self.VOLUME)
-        # self.tts.setProperty('voice', 'spanish-latin-am')
+        if self.local:
+            self.tts = pyttsx3.init()
+            self.tts.setProperty('rate', self.RATE)
+            self.tts.setProperty('volume', self.VOLUME)
+            self.tts.setProperty('voice', 'spanish-latin-am')
+        else:
         # Instantiates a client
-        self.tts_client = texttospeech.TextToSpeechClient()
-        # Build the voice request, select the language code ("en-US") and the ssml
-        # voice gender ("neutral")
-        self.tts_voice = texttospeech.types.VoiceSelectionParams(
-            language_code='es-ES',
-            ssml_gender=texttospeech.enums.SsmlVoiceGender.FEMALE)
+            self.tts_client = texttospeech.TextToSpeechClient()
+            # Build the voice request, select the language code ("en-US") and the ssml
+            # voice gender ("neutral")
+            self.tts_voice = texttospeech.types.VoiceSelectionParams(
+                language_code='es-ES',
+                ssml_gender=texttospeech.enums.SsmlVoiceGender.FEMALE)
 
-        # Select the type of audio file you want returned
-        self.tts_audio_config = texttospeech.types.AudioConfig(
-            audio_encoding=texttospeech.enums.AudioEncoding.MP3)
+            # Select the type of audio file you want returned
+            self.tts_audio_config = texttospeech.types.AudioConfig(
+                audio_encoding=texttospeech.enums.AudioEncoding.MP3)
         
 
     def speak(self, phrase):
-        # self.tts.say(phrase)
-        # self.tts.runAndWait()
-        # Set the text input to be synthesized
         print('decir: ' + phrase)
-        synthesis_input = texttospeech.types.SynthesisInput(text=phrase)
-        # Perform the text-to-speech request on the text input with the selected
-        # voice parameters and audio file type
-        response = self.tts_client.synthesize_speech(synthesis_input, self.tts_voice, self.tts_audio_config)
-        audio_file='tts.mp3'
-        # The response's audio_content is binary.
-        with open(audio_file, 'wb') as out:
-            out.write(response.audio_content)
-        print('reproducir voz sintetica')
-        command = '/usr/bin/mpg321 ' + audio_file
-        print(command)
-        os.system(command)
+        if self.local:
+            self.tts.say(phrase)
+            self.tts.runAndWait()
+        else:
+            # Set the text input to be synthesized
+            synthesis_input = texttospeech.types.SynthesisInput(text=phrase)
+            # Perform the text-to-speech request on the text input with the selected
+            # voice parameters and audio file type
+            response = self.tts_client.synthesize_speech(synthesis_input, self.tts_voice, self.tts_audio_config)
+            audio_file='tts.mp3'
+            # The response's audio_content is binary.
+            with open(audio_file, 'wb') as out:
+                out.write(response.audio_content)
+            print('reproducir voz sintetica')
+            command = '/usr/bin/mpg321 ' + audio_file
+            print(command)
+            os.system(command)
 
     def play(self, filename):
         extension = filename.split('.')[1]

@@ -28,8 +28,9 @@ class Robot(Machine):
             self.grammar_data = data_dic['grammar_data']
             self.trigger_data = data_dic['trigger_data']
             self.action_data = data_dic['action_data']
-
-            self.player = TestVoice()
+            
+            self.local = data_dic['local_proc']
+            self.player = TestVoice(local=self.local)
             # available only when deployed in a raspberry pi
             if app.config['RASPI']:
                 self.traction = CholitaTraction()
@@ -149,11 +150,13 @@ class JsonFsm(object):
         self.transitions = []
         self.action_data = {}
 
-    def loadFSM(self, filepath):
+    def loadFSM(self, filepath, local=True):
         print('reiniciando fsm')
         self.filepath = filepath
         self.load()
-        return Robot(self.parse())
+        fsm_dic = self.parse()
+        fsm_dic['local_proc'] = local
+        return Robot(fsm_dic)
 
     def load(self):
         # load entire file

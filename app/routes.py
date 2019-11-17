@@ -114,7 +114,9 @@ def edit_profile():
 def run_program(program_id):
     global fsm
     global running_instance
-
+    is_local = request.args.get('proc') == 'offline'
+    if is_local:
+        print('offline processing')
     program = Program.query.filter_by(id=program_id).first()
 
     if not program:
@@ -140,7 +142,7 @@ def run_program(program_id):
     try:
         program.active = True
         db.session.commit()
-        running_instance = fsm.loadFSM(program.filepath)
+        running_instance = fsm.loadFSM(program.filepath, local=is_local)
         running_instance.begin()
         program.active = False
         db.session.commit()
