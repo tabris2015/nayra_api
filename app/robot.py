@@ -152,7 +152,7 @@ class TestVoice(Voice):
         with open(audio_file, 'wb') as out:
             out.write(response.audio_content)
         print('reproducir voz sintetica')
-        command = 'mpg321 ' + audio_file
+        command = '/usr/bin/mpg321 ' + audio_file
         print(command)
         os.system(command)
 
