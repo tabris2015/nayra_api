@@ -153,7 +153,7 @@ class TestVoice(Voice):
             out.write(response.audio_content)
         print('reproducir voz sintetica')
         if self.raspi:
-            os.system('mpg321 foo.mp3')
+            os.system('mpg321 ' + audio_file)
         else:
             playsound(audio_file)
 
