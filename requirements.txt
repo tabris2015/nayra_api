@@ -101,7 +101,7 @@ typing-inspect==0.6.0
 urllib3==1.26.2
 wcwidth==0.1.7
 webencodings==0.5.1
-Werkzeug==0.14.1
+Werkzeug==0.15.3
 widgetsnbextension==3.5.0
 wrapt==1.11.2
 WTForms==2.2.1
