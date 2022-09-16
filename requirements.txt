@@ -44,7 +44,7 @@ jupyter-console==6.0.0
 jupyter-core==4.5.0
 lazy-object-proxy==1.4.1
 libcst==0.3.14
-Mako==1.0.14
+Mako==1.2.2
 MarkupSafe==1.1.1
 mccabe==0.6.1
 mistune==0.8.4
